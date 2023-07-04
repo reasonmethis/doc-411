@@ -33,7 +33,7 @@ If that doesn't work (for a reason other than the one described in step 4 below)
 
 If one of the above steps fails, try them again from the beginning using pip version 22.3.1: `pip install pip==22.3.1`. If that also fails, additionally switch to python version 3.11.3 (remember to double-check the pip version after switching).
 
-#### 4. The above command may fail with the error message:
+#### 4. Installing requirements may fail with the error message:
 ```bash
 Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
 ```
@@ -41,6 +41,7 @@ If this happens you will need to install the Microsoft C++ Build Tools. You can 
 
 #### 5. Copy the `.env.example` file to `.env` and fill in the values. 
 
-
-### Installation Notes
- I had to downgrade the version of the clickhouse-connect package (required by chromadb) from 0.6.4 to 0.5.22 because of the issue described [here](https://github.com/imartinez/privateGPT/issues/723). This may be fixed in the future, so you can try installing the latest version of clickhouse-connect if you want.
+#### 6. Run the project.
+```bash
+python doc-411.py
+```
