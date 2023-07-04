@@ -3,49 +3,59 @@ import os
 from dotenv import load_dotenv
 
 from langchain.document_loaders import TextLoader, DirectoryLoader
-from langchain.indexes import VectorstoreIndexCreator
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import Chroma
+from langchain.text_splitter import CharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
+
+# from langchain.llms import OpenAI
+from langchain.chains import ConversationalRetrievalChain
 
 if __name__ == "__main__":
     # check that the necessary environment variables are set
     load_dotenv()
     DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
-    USE_GENERAL_KNOWLEDGE = os.getenv("USE_GENERAL_KNOWLEDGE")
-    USE_GENERAL_KNOWLEDGE = (
-        bool(USE_GENERAL_KNOWLEDGE) and USE_GENERAL_KNOWLEDGE.lower() != "false"
-    )
+    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+    TEMPERATURE = float(os.getenv("TEMPERATURE", 0.7))
     if DOCS_TO_INGEST_DIR_OR_FILE is None or os.getenv("OPENAI_API_KEY") is None:
-        print(
-            "Please set the DOCS_TO_INGEST_DIR_OR_FILE and OPENAI_API_KEY environment variables in .env."
-        )
+        print("Please set the environment variables in .env, as shown in .env.example.")
         sys.exit()
 
     # find documents to ingest
     if not os.path.exists(DOCS_TO_INGEST_DIR_OR_FILE):
         print(
-            "The path set in the DOCS_TO_INGEST_DIR_OR_FILE environment variable is not a valid directory or file."
+            "The path set in the DOCS_TO_INGEST_DIR_OR_FILE .env variable is not a valid directory or file."
         )
         sys.exit()
 
-    # load documents and create index
+    # load documents to ingest
     if os.path.isfile(DOCS_TO_INGEST_DIR_OR_FILE):
         loader = TextLoader(DOCS_TO_INGEST_DIR_OR_FILE)
     else:
         loader = DirectoryLoader(DOCS_TO_INGEST_DIR_OR_FILE)
+    docs = loader.load()
 
+    # create vectorstore
     try:
-        index = VectorstoreIndexCreator().from_loaders([loader])
+        # index = VectorstoreIndexCreator().from_loaders([loader])
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        docs = text_splitter.split_documents(docs)
+
+        embeddings = OpenAIEmbeddings()
+        vectorstore = Chroma.from_documents(docs, embeddings)
+
+        llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
+        bot = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever())
     except Exception as e:
         # print authentication errors etc.
         print(e)
         sys.exit()
 
     # start chat
-    print("Please submit your queries. Replies may take a few seconds.")
-    print(
-        "NOTE: Doc-411 only remembers your current question, not the entire conversation."
-    )
+    print("Replies may take a few seconds.")
+    print("Doc-411 remembers the conversation but, not very accurately.")
     print('To exit, type "exit" or "quit".')
+    chat_history = []
     while True:
         # get query from user
         query = input("YOU: ")
@@ -58,9 +68,14 @@ if __name__ == "__main__":
                 break
         print()
 
-        # get response from model/index
-        reply = index.query(query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None)
+        # get response from model
+        # reply = index.query(query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None)
+        result = bot({"question": query, "chat_history": chat_history})
+        reply = result["answer"]
+
+        # update chat history
+        chat_history.append((query, reply))
 
         # print reply
         print("DOC-411: ", reply)
-        print('-' * 40 + '\n')
+        print("-" * 40 + "\n")
