@@ -4,11 +4,16 @@ from dotenv import load_dotenv
 
 from langchain.document_loaders import TextLoader, DirectoryLoader
 from langchain.indexes import VectorstoreIndexCreator
+from langchain.chat_models import ChatOpenAI
 
 if __name__ == "__main__":
     # check that the necessary environment variables are set
     load_dotenv()
     DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
+    USE_GENERAL_KNOWLEDGE = os.getenv("USE_GENERAL_KNOWLEDGE")
+    USE_GENERAL_KNOWLEDGE = (
+        USE_GENERAL_KNOWLEDGE is not None and USE_GENERAL_KNOWLEDGE.lower() != "false"
+    )
     if DOCS_TO_INGEST_DIR_OR_FILE is None or os.getenv("OPENAI_API_KEY") is None:
         print(
             "Please set the DOCS_TO_INGEST_DIR_OR_FILE and OPENAI_API_KEY environment variables in .env."
@@ -35,17 +40,24 @@ if __name__ == "__main__":
         print(e)
         sys.exit()
 
-    print('Please submit your questions. Replies may take a few seconds.')
-    print('NOTE: Doc-411 only remembers your current question, not the entire conversation.')
+    print("Please submit your questions. Replies may take a few seconds.")
+    print(
+        "NOTE: Doc-411 only remembers your current question, not the entire conversation."
+    )
     print('To exit, type "exit" or "quit".')
     while True:
         # get query from user
         query = input("YOU: ")
         if query == "exit" or query == "quit":
-            break   
+            break
+        if query == "":
+            print("Please enter your query or press Enter to exit.")
+            query = input("YOU: ")
+            if query == "":
+                break
 
         # get response from index
-        response = index.query(query)
+        response = index.query(query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None)
 
         # print response
         print("DOC-411: ", response)
