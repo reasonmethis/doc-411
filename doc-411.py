@@ -40,7 +40,8 @@ if __name__ == "__main__":
         print(e)
         sys.exit()
 
-    print("Please submit your questions. Replies may take a few seconds.")
+    # start chat
+    print("Please submit your queries. Replies may take a few seconds.")
     print(
         "NOTE: Doc-411 only remembers your current question, not the entire conversation."
     )
@@ -55,11 +56,11 @@ if __name__ == "__main__":
             query = input("YOU: ")
             if query == "":
                 break
+        print()
 
-        # get response from index
-        response = index.query(
-            query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None
-        )
+        # get response from model/index
+        reply = index.query(query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None)
 
-        # print response
-        print("DOC-411: ", response)
+        # print reply
+        print("DOC-411: ", reply)
+        print('-' * 40 + '\n')

@@ -27,11 +27,12 @@ If that doesn't work (for a reason other than the one described in step 4 below)
 - run `pip install unstructured==0.7.12`
 - upgrade numpy: `pip install numpy==1.24.3`
     - you will likely get a warning about a conflict, ignore it
-    - if this fails, try from the beginning with pip version 22.3.1
 - install the rest of the requirements: `pip install langchain==0.0.222 openai==0.27.8 chromadb==0.3.26 tiktoken==0.4.0`
 - downgrade clickhouse-connect: `pip install clickhouse-connect==0.5.22`
     - the reason for this is the issue described [here](https://github.com/imartinez/privateGPT/issues/723)
-    
+
+If one of the above steps fails, try them again from the beginning using pip version 22.3.1: `pip install pip==22.3.1`. If that also fails, additionally switch to python version 3.11.3 (remember to double-check the pip version after switching).
+
 #### 4. The above command may fail with the error message:
 ```bash
 Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
