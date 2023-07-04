@@ -45,3 +45,9 @@ If this happens you will need to install the Microsoft C++ Build Tools. You can 
 ```bash
 python doc-411.py
 ```
+
+## Resources
+[Conversational retrieval QA: memory, condensing history](https://python.langchain.com/docs/modules/chains/popular/chat_vector_db)<br>
+[Conversation memory, streaming, answering with sources](https://python.langchain.com/docs/ecosystem/integrations/vectara/vectara_chat)<br>
+[Use case: understanding an entire Github repo](https://python.langchain.com/docs/use_cases/code/)
+
