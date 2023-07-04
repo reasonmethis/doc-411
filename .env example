@@ -1,3 +1,6 @@
 # Copy this file to .env and fill in the values
 OPENAI_API_KEY="your API key (if you don't have one, you can get it for free from OpenAI)"
 DOCS_TO_INGEST_DIR_OR_FILE="path/to/directory/or/single/file/with/your/docs/to/ingest"
+USE_GENERAL_KNOWLEDGE="true" # "" or "false" (case insensitive) means only use the information
+# from the docs you provided. 
+# "any other string" means more ChatGPT-like responses, using the full knowledge base of the LLM.

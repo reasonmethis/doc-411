@@ -12,7 +12,7 @@ if __name__ == "__main__":
     DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
     USE_GENERAL_KNOWLEDGE = os.getenv("USE_GENERAL_KNOWLEDGE")
     USE_GENERAL_KNOWLEDGE = (
-        USE_GENERAL_KNOWLEDGE is not None and USE_GENERAL_KNOWLEDGE.lower() != "false"
+        bool(USE_GENERAL_KNOWLEDGE) and USE_GENERAL_KNOWLEDGE.lower() != "false"
     )
     if DOCS_TO_INGEST_DIR_OR_FILE is None or os.getenv("OPENAI_API_KEY") is None:
         print(
@@ -57,7 +57,9 @@ if __name__ == "__main__":
                 break
 
         # get response from index
-        response = index.query(query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None)
+        response = index.query(
+            query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None
+        )
 
         # print response
         print("DOC-411: ", response)
