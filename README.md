@@ -10,7 +10,7 @@ This is a simple project that utilizes Langchain to have a large language model 
 #### 2. Create and activate a virtual environment.
 On Windows:
 ```bash
-python -m venv .venv && .venv/scripts/activate
+python -m venv .venv && .venv\scripts\activate
 ```
 
 On Mac/Linux:
