@@ -8,10 +8,8 @@ from langchain.indexes import VectorstoreIndexCreator
 if __name__ == "__main__":
     # check that the necessary environment variables are set
     load_dotenv()
-    try:
-        _ = os.getenv("OPENAI_API_KEY")
-        DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
-    except Exception as e:
+    DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
+    if DOCS_TO_INGEST_DIR_OR_FILE is None or os.getenv("OPENAI_API_KEY") is None:
         print(
             "Please set the DOCS_TO_INGEST_DIR_OR_FILE and OPENAI_API_KEY environment variables in .env."
         )
