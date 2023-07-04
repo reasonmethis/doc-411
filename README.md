@@ -6,10 +6,11 @@ This is a simple project that utilizes Langchain to have a large language model 
 ## Installation
 
 #### 1. Clone this repository and cd into it.
+
 #### 2. Create and activate a virtual environment.
 On Windows:
 ```bash
-python -m venv .venv && .venv/scripts/activate`
+python -m venv .venv && .venv/scripts/activate
 ```
 
 On Mac/Linux:
