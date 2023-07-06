@@ -7,7 +7,10 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
+from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
+
+import docgrab
 
 DELIMITER = "-" * 94 + "\n"
 INTRO_ASCII_ART = """ ,___,   ,___,   ,___,                                                 ,___,   ,___,   ,___,
@@ -37,7 +40,10 @@ if __name__ == "__main__":
     # load documents to ingest
     print("Ingesting your documents, please stand by... ", end="", flush=True)
     if os.path.isfile(DOCS_TO_INGEST_DIR_OR_FILE):
-        loader = TextLoader(DOCS_TO_INGEST_DIR_OR_FILE)
+        if DOCS_TO_INGEST_DIR_OR_FILE.endswith(".jsonl"):
+            loader = docgrab.JSONLDocumentLoader(DOCS_TO_INGEST_DIR_OR_FILE, 2)
+        else:
+            loader = TextLoader(DOCS_TO_INGEST_DIR_OR_FILE)
     else:
         loader = DirectoryLoader(DOCS_TO_INGEST_DIR_OR_FILE)
     docs = loader.load()
@@ -51,7 +57,10 @@ if __name__ == "__main__":
         embeddings = OpenAIEmbeddings()
         vectorstore = Chroma.from_documents(docs, embeddings)
 
-        llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
+        if "gpt" in MODEL_NAME or "text-davinci" in MODEL_NAME:
+            llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
+        else:
+            llm = OpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
         bot = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever())
         print("Done!")
     except Exception as e:
