@@ -7,11 +7,17 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
-
-# from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 
+DELIMITER = "-" * 94 + "\n"
+INTRO_ASCII_ART = """ ,___,   ,___,   ,___,                                                 ,___,   ,___,   ,___,
+ [OvO]   [OvO]   [OvO]                                                 [OvO]   [OvO]   [OvO]
+ /)__)   /)__)   /)__)               WELCOME TO DOC 411                /)__)   /)__)   /)__)
+--"--"----"--"----"--"--------------------------------------------------"--"----"--"----"--"--"""
+
 if __name__ == "__main__":
+    print(INTRO_ASCII_ART + "\n\n")
+
     # check that the necessary environment variables are set
     load_dotenv()
     DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
@@ -29,6 +35,7 @@ if __name__ == "__main__":
         sys.exit()
 
     # load documents to ingest
+    print("Ingesting your documents, please stand by... ", end="", flush=True)
     if os.path.isfile(DOCS_TO_INGEST_DIR_OR_FILE):
         loader = TextLoader(DOCS_TO_INGEST_DIR_OR_FILE)
     else:
@@ -46,15 +53,19 @@ if __name__ == "__main__":
 
         llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
         bot = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever())
+        print("Done!")
     except Exception as e:
         # print authentication errors etc.
         print(e)
         sys.exit()
 
     # start chat
-    print("Replies may take a few seconds.")
-    print("Doc-411 remembers the conversation but, not very accurately.")
-    print('To exit, type "exit" or "quit".')
+    print()
+    print("Keep in mind:")
+    print("- Replies may take a few seconds.")
+    print("- Doc 411 remembers the previous messages but not always accurately.")
+    print('- To exit, type "exit" or "quit", or just press Enter twice.')
+    print(DELIMITER)
     chat_history = []
     while True:
         # get query from user
@@ -77,5 +88,5 @@ if __name__ == "__main__":
         chat_history.append((query, reply))
 
         # print reply
-        print("DOC-411: ", reply)
-        print("-" * 40 + "\n")
+        print("DOC 411:", reply)
+        print(DELIMITER)
