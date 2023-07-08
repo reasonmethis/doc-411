@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader, DirectoryLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.chains import ConversationalRetrievalChain
@@ -18,55 +18,87 @@ INTRO_ASCII_ART = """ ,___,   ,___,   ,___,                                     
  /)__)   /)__)   /)__)               WELCOME TO DOC 411                /)__)   /)__)   /)__)
 --"--"----"--"----"--"--------------------------------------------------"--"----"--"----"--"--"""
 
-if __name__ == "__main__":
-    print(INTRO_ASCII_ART + "\n\n")
 
-    # check that the necessary environment variables are set
-    load_dotenv()
-    DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
-    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
-    TEMPERATURE = float(os.getenv("TEMPERATURE", 0.7))
-    if DOCS_TO_INGEST_DIR_OR_FILE is None or os.getenv("OPENAI_API_KEY") is None:
-        print("Please set the environment variables in .env, as shown in .env.example.")
-        sys.exit()
-
-    # find documents to ingest
-    if not os.path.exists(DOCS_TO_INGEST_DIR_OR_FILE):
-        print(
-            "The path set in the DOCS_TO_INGEST_DIR_OR_FILE .env variable is not a valid directory or file."
-        )
-        sys.exit()
-
-    # load documents to ingest
-    print("Ingesting your documents, please stand by... ", end="", flush=True)
-    if os.path.isfile(DOCS_TO_INGEST_DIR_OR_FILE):
-        if DOCS_TO_INGEST_DIR_OR_FILE.endswith(".jsonl"):
-            loader = docgrab.JSONLDocumentLoader(DOCS_TO_INGEST_DIR_OR_FILE, 2)
-        else:
-            loader = TextLoader(DOCS_TO_INGEST_DIR_OR_FILE)
-    else:
-        loader = DirectoryLoader(DOCS_TO_INGEST_DIR_OR_FILE)
-    docs = loader.load()
-
-    # create vectorstore
+def create_vectorstore(docs, save_dir=None):
     try:
         # index = VectorstoreIndexCreator().from_loaders([loader])
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000, chunk_overlap=100
+        )
         docs = text_splitter.split_documents(docs)
 
         embeddings = OpenAIEmbeddings()
-        vectorstore = Chroma.from_documents(docs, embeddings)
+        vectorstore = Chroma.from_documents(
+            docs, embeddings, persist_directory=save_dir
+        )
+        return vectorstore
+    except Exception as e:
+        # print authentication errors etc.
+        print(e)
+        sys.exit()
 
+
+def create_bot(vectorstore):
+    try:
         if "gpt" in MODEL_NAME or "text-davinci" in MODEL_NAME:
             llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
         else:
             llm = OpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
         bot = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever())
-        print("Done!")
+        return bot
     except Exception as e:
-        # print authentication errors etc.
         print(e)
         sys.exit()
+
+
+if __name__ == "__main__":
+    print(INTRO_ASCII_ART + "\n\n")
+
+    # check that the necessary environment variables are set
+    load_dotenv()
+    VECTORDB_DIR = os.getenv("VECTORDB_DIR")
+    DOCS_TO_INGEST_DIR_OR_FILE = os.getenv("DOCS_TO_INGEST_DIR_OR_FILE")
+    SAVE_VECTORDB_DIR = os.getenv("SAVE_VECTORDB_DIR")
+
+    MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+    TEMPERATURE = float(os.getenv("TEMPERATURE", 0.7))
+    if (not DOCS_TO_INGEST_DIR_OR_FILE and not VECTORDB_DIR) or not os.getenv(
+        "OPENAI_API_KEY"
+    ):
+        print("Please set the environment variables in .env, as shown in .env.example.")
+        sys.exit()
+
+    # verify the validity of the docs or db path
+    tmp_path = VECTORDB_DIR or DOCS_TO_INGEST_DIR_OR_FILE
+    if not os.path.exists(tmp_path):
+        print(
+            "The path you provided for your documents or vector database does not exist."
+        )
+        sys.exit()
+
+    # load documents to ingest (if we're not loading a vectorstore)
+    if VECTORDB_DIR:
+        print("Loading the vector database of your documents... ", end="", flush=True)
+    else:
+        print("Ingesting your documents, please stand by... ", end="", flush=True)
+        if os.path.isfile(DOCS_TO_INGEST_DIR_OR_FILE):
+            if DOCS_TO_INGEST_DIR_OR_FILE.endswith(".jsonl"):
+                loader = docgrab.JSONLDocumentLoader(DOCS_TO_INGEST_DIR_OR_FILE)
+            else:
+                loader = TextLoader(DOCS_TO_INGEST_DIR_OR_FILE)
+        else:
+            loader = DirectoryLoader(DOCS_TO_INGEST_DIR_OR_FILE)
+        docs = loader.load()
+
+    # create (or load) vectorstore and bot
+    if VECTORDB_DIR:
+        vectorstore = Chroma(
+            embedding_function=OpenAIEmbeddings(), persist_directory=VECTORDB_DIR
+        )
+    else:
+        vectorstore = create_vectorstore(docs, save_dir=SAVE_VECTORDB_DIR or None)
+    bot = create_bot(vectorstore)
+    print("Done!")
 
     # start chat
     print()
@@ -88,7 +120,7 @@ if __name__ == "__main__":
                 break
         print()
 
-        # get response from model
+        # get response from bot
         # reply = index.query(query, llm=ChatOpenAI() if USE_GENERAL_KNOWLEDGE else None)
         result = bot({"question": query, "chat_history": chat_history})
         reply = result["answer"]
