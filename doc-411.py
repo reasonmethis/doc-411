@@ -6,12 +6,23 @@ from langchain.document_loaders import TextLoader, DirectoryLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
+
+from langchain.chains import LLMChain
+from langchain.chains.question_answering import load_qa_chain
+from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.chains import ConversationalRetrievalChain
+
+from prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT_CHAT
+
+# from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 
 import docgrab
 
+USE_SOURCES = False
+VERBOSE = True
 DELIMITER = "-" * 94 + "\n"
 INTRO_ASCII_ART = """ ,___,   ,___,   ,___,                                                 ,___,   ,___,   ,___,
  [OvO]   [OvO]   [OvO]                                                 [OvO]   [OvO]   [OvO]
@@ -41,10 +52,28 @@ def create_vectorstore(docs, save_dir=None):
 def create_bot(vectorstore):
     try:
         if "gpt" in MODEL_NAME or "text-davinci" in MODEL_NAME:
-            llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
+            llm = ChatOpenAI(model=MODEL_NAME, temperature=TEMPERATURE)  # for answering
+            llm_q = ChatOpenAI(model=MODEL_NAME, temperature=0)  # to condense question
         else:
             llm = OpenAI(model=MODEL_NAME, temperature=TEMPERATURE)
-        bot = ConversationalRetrievalChain.from_llm(llm, vectorstore.as_retriever())
+            llm_q = OpenAI(model=MODEL_NAME, temperature=0)
+
+        # https://python.langchain.com/docs/modules/chains/popular/chat_vector_db
+        combine_docs_chain = (
+            load_qa_with_sources_chain(llm, verbose=VERBOSE)
+            if USE_SOURCES
+            else load_qa_chain(llm, prompt=QA_PROMPT_CHAT, verbose=VERBOSE)
+        )
+        bot = ConversationalRetrievalChain(
+            question_generator=LLMChain(
+                llm=llm_q, prompt=CONDENSE_QUESTION_PROMPT, verbose=VERBOSE
+            ),
+            retriever=vectorstore.as_retriever(),
+            combine_docs_chain=combine_docs_chain,
+            verbose=True,
+            return_source_documents=True,
+            return_generated_question=True,
+        )
         return bot
     except Exception as e:
         print(e)
@@ -131,3 +160,6 @@ if __name__ == "__main__":
         # print reply
         print("DOC 411:", reply)
         print(DELIMITER)
+
+        # print(result)
+        # print(DELIMITER)
