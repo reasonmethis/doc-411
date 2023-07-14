@@ -70,7 +70,6 @@ def create_bot(vectorstore):
             ),
             retriever=vectorstore.as_retriever(),
             combine_docs_chain=combine_docs_chain,
-            verbose=True,
             return_source_documents=True,
             return_generated_question=True,
         )
@@ -90,7 +89,7 @@ if __name__ == "__main__":
     SAVE_VECTORDB_DIR = os.getenv("SAVE_VECTORDB_DIR")
 
     MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
-    TEMPERATURE = float(os.getenv("TEMPERATURE", 0.7))
+    TEMPERATURE = float(os.getenv("TEMPERATURE", 0.1))
     if (not DOCS_TO_INGEST_DIR_OR_FILE and not VECTORDB_DIR) or not os.getenv(
         "OPENAI_API_KEY"
     ):
