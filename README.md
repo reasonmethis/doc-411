@@ -1,7 +1,7 @@
 # Doc 411
 
 ## Introduction
-This is a simple project that utilizes Langchain to have a large language model ingest your documents and be able to answer questions about them.
+Doc 411 is a chatbot that utilizes Langchain, OpenAi's LLMs (or other language models of your choice), and ChromaDB to ingest your documents and utilize information contained in them in its responses. Roughly speaking, it is like ChatGPT that can additionally pull information from your documents.
 
 ## Installation
 
@@ -19,7 +19,7 @@ python -m venv .venv && source .venv/bin/activate
 ```
 
 #### 3. Install the requirements.
-95% of the time for creating this project was spent on figuring out a way to install the requirements. There are some conflicts in the current versions, but if you are reading this far enough in the future, you can try to simply run:
+Figuring out a way to install the requirements without running into errors turned out to be quite a challenge. There are some conflicts in the current versions, but if you are reading this far enough in the future, you can try to simply run:
 ```bash
 pip install langchain openai chromadb tiktoken unstructured
 ```
